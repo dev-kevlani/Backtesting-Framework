@@ -1,5 +1,5 @@
 
-from indicatorLibrary import all_indicators
+from .indicatorLibrary import all_indicators
 
 rolling_window_of_returns = 4
 rsi_window = 4

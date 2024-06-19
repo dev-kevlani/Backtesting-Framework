@@ -1,66 +1,57 @@
 import pandas as pd
-from datetime import datetime
-from dataFetching import get_option_data, get_futures_data
-from ohlcBuilder import create_ohlc_candles
-from applying_indicators import apply_indicators
-from calculateGreeks import calculate_iv_and_greeks
-import multiprocessing
-from multiprocessing import freeze_support
+from datetime import datetime, timedelta
+from .dataFetching import get_option_data, get_futures_data
+from .ohlcBuilder import create_ohlc_candles
+from .applying_indicators import apply_indicators
+from .calculateGreeks import calculate_iv_and_greeks
+from strategyLayer.createLegs import *
+from strategyLayer.positionClass import *
+from strategyLayer.strategyClass import *
+from executionLayer.spreadStrategiesBacktester import *
+import time
 
 class DataHandler:
-    
-    def __init__(self, ticker, start_date, end_date, timeframe):
+    def __init__(self, ticker, timeframe):
         self.ticker = ticker
-        self.start_date = start_date
-        self.end_date = end_date
-        self.data = {}
-        self.futures_ohlc_data = {}
-        self.futures_indicator_data = {}
-        self.options_data = {}
-        self.options_mapped_dict = {}
         self.timeframe = timeframe
-        self.date_list = pd.date_range(start=start_date, end=end_date).to_pydatetime().tolist()
 
     def process_data(self, date, futures_data, options_data, timeframe):
         if futures_data is None:
-            return None, None, None, None
+            options_data_processed = calculate_iv_and_greeks(options_data)
+            return date, None, None, options_data_processed
 
         ohlc_data = create_ohlc_candles(futures_data, timeframe)
-        
-        # if strategy_type in ['STRADDLE', 'STRANGLE', etc etc]:
-        #     calculate_options_processed_data
-            
-        #     return that
-        
         indicator_data = apply_indicators(ohlc_data.copy())
         options_data_processed = calculate_iv_and_greeks(options_data)
         
         return date, ohlc_data, indicator_data, options_data_processed
 
-
-    def fetch_data(self, args):
-        
-        date = args
+    def fetch_data(self, date):
         futures_data = get_futures_data(self.ticker, date.year, date.month, date.day)
         options_data = get_option_data(self.ticker, date.year, date.month, date.day)
-        date, ohlc_data, indicator_data, options_data_processed = self.process_data(date, futures_data, options_data, '1T')
+        return self.process_data(date, futures_data, options_data, self.timeframe)
+
+    def fetch_and_process_data(self, args):
+        date, sl, tp, instruments_with_actions, sl_percentage_based, tp_percentage_based = args
+        date, ohlc_data, indicator_data, options_data_processed = self.fetch_data(date)
         
-        return date, ohlc_data, indicator_data, options_data_processed
-
-
-    def fetch_and_process_data(self):
-        
-        with multiprocessing.Pool(processes=32) as pool:
-            fetch_data = pool.map(self.fetch_data, [(date) for date in self.date_list])
-
-        return fetch_data
-
-if __name__ == '__main__':
-    
-    freeze_support()
-    tickers = ['BANKNIFTY', 'NIFTY']
-    start_date = datetime(2023, 1, 1)
-    end_date = datetime(2023, 1, 31)
-    
-    data_handler = DataHandler('BANKNIFTY', start_date, end_date, timeframe='1T')
-    fetched_data = data_handler.fetch_and_process_data()
+        if options_data_processed is not None:
+            if isinstance(options_data_processed, tuple):
+                return None
+            
+            options_data_processed.index = pd.to_datetime(options_data_processed.index)
+            options_data_processed['entry_signal'] = options_data_processed.index.map(lambda x: x.second == 0)
+            options_data_processed['exit_signal'] = False
+            signals = pd.DataFrame()
+            
+            # strategy = atmStraddleSell()
+            # backtester = SpreadBacktester(options_data_processed, signals, sl, tp, strategy)
+            backtester = SpreadBacktester(options_data_processed, signals, sl, tp, instruments_with_actions, sl_percentage_based, tp_percentage_based)
+            start_time = time.time()
+            trades = backtester.execute_trades()
+            end_time = time.time()
+            elapsed_time = end_time - start_time
+            print(f"Processed {date} in {elapsed_time:.2f} seconds")
+            return trades
+        else:
+            return None
