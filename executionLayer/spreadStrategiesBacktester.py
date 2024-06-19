@@ -46,7 +46,7 @@ class SpreadBacktester:
             atm_strike = self.options_data.loc[timestamp][self.options_data.loc[timestamp]['Difference'] == min_diff]['strike_price'].iloc[0]
             strategy = DynamicLegStrategy()
             legs, self.filtered_options_data = strategy.get_legs(self.options_data, timestamp, atm_strike, self.instruments_with_actions)
-            premium = sum(leg['entry_price'] for leg in legs)
+            premium = sum((leg['entry_price'] * leg['lot_size']) for leg in legs)
             margin_used = sum(leg['margin_used'] for leg in legs)
             strat_type = 'credit' if premium < 0 else 'debit'
             

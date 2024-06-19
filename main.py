@@ -20,45 +20,53 @@ def run_backtesting():
     
     tickers = ['BANKNIFTY', 'NIFTY']
     start_date = datetime(2023, 1, 1)
-    end_date = datetime(2023, 12, 31)
+    end_date = datetime(2023, 1, 28)
     date_list = pd.date_range(start=start_date, end=end_date).to_pydatetime().tolist()
     sl_percentage_based = False  # Change this flag based on your requirement
     tp_percentage_based = False  # Change this flag based on your requirement
     
-    sl = 1.25 if sl_percentage_based else 15  # Example values, adjust as needed
-    tp = 0.7 if tp_percentage_based else 15  # Example values, adjust as needed
+    sl = 1.25 if sl_percentage_based else 33  # Example values, adjust as needed
+    tp = 0.7 if tp_percentage_based else 33  # Example values, adjust as needed
     instruments_with_actions = [
-        {
-            'strike_part': +200,
-            'option_type': 'CE',
-            'action': 'sell'
-        },
-        {
-            'strike_part': -200,
-            'option_type': 'PE',
-            'action': 'sell'
-        },
-        {
-            'strike_part': +300,
-            'option_type': 'CE',
-            'action': 'sell'
-        },
-        {
-            'strike_part': -300,
-            'option_type': 'PE',
-            'action': 'sell'
-        },
-        {
-            'strike_part': +400,
-            'option_type': 'CE',
-            'action': 'buy'
-        },
-        {
-            'strike_part': -400,
-            'option_type': 'PE',
-            'action': 'buy'
-        }
+    {
+        'strike_part': +200,
+        'option_type': 'CE',
+        'action': 'sell',
+        'lots': 1
+    },
+    {
+        'strike_part': -200,
+        'option_type': 'PE',
+        'action': 'sell',
+        'lots': 1
+    },
+    {
+        'strike_part': +300,
+        'option_type': 'CE',
+        'action': 'sell',
+        'lots': 1
+    },
+    {
+        'strike_part': -300,
+        'option_type': 'PE',
+        'action': 'sell',
+        'lots': 1
+    },
+    {
+        'strike_part': +400,
+        'option_type': 'CE',
+        'action': 'buy',
+        'lots': 2
+    },
+    {
+        'strike_part': -400,
+        'option_type': 'PE',
+        'action': 'buy',
+        'lots': 2
+    }
+    
     ]
+
     
     with multiprocessing.Pool(processes=32) as pool:
         data_handler = DataHandler('BANKNIFTY', timeframe='1T')

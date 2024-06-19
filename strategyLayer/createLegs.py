@@ -1,7 +1,7 @@
 from datetime import timedelta
 from utils.utils import *
 
-def create_leg(options_data, timestamp, strike_price, action, option_type):
+def create_leg(options_data, timestamp, strike_price, action, option_type, lots):
     while True:
         try:
             option = options_data.loc[timestamp]
@@ -11,7 +11,7 @@ def create_leg(options_data, timestamp, strike_price, action, option_type):
             pass
         timestamp = timestamp + timedelta(seconds=1)
 
-    margin = -100000 if action == 'sell' else option['option_price'] * 15
+    margin = (-100000*lots) if action == 'sell' else (option['option_price'] * 15 * lots)
     multiplier = get_multiplier(action, option_type)
     
     leg_data = {
@@ -19,6 +19,7 @@ def create_leg(options_data, timestamp, strike_price, action, option_type):
         'strike_price': strike_price,
         'option_type': option_type,
         'action': action,
+        'lot_size': lots,
         'margin_used': margin,
         'entry_price': option['option_price'] if action == 'buy' else -option['option_price'],
         'entry_delta': option['delta'] * multiplier,

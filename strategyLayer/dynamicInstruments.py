@@ -10,7 +10,7 @@ class DynamicLegStrategy:
         strikes_and_types = []
 
         for instrument in instruments_with_actions:
-            strike_price, option_type, action = atm_strike + instrument['strike_part'], instrument['option_type'], instrument['action']
+            strike_price, option_type, action, lots = atm_strike + instrument['strike_part'], instrument['option_type'], instrument['action'], instrument['lots']
             strikes_and_types.append((strike_price, option_type))
             
             options_data_filtered = options_data[
@@ -18,7 +18,7 @@ class DynamicLegStrategy:
                 (options_data['option_type'] == option_type)
             ]
             
-            leg = create_leg(options_data_filtered, timestamp, strike_price, action, option_type)
+            leg = create_leg(options_data_filtered, timestamp, strike_price, action, option_type, lots)
             legs.append(leg)
         
         strikes_and_types_df = pd.DataFrame(strikes_and_types, columns=['strike_price', 'option_type'])
