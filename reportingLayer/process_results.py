@@ -4,25 +4,34 @@ import matplotlib.pyplot as plt
 def process_results(results):
     all_trade_dicts = []
 
-    for day_trades in results:
-        if day_trades is not None:
-            for trade in day_trades:
-                trade_dict = {
-                    'entry_timestamp': trade['entry_timestamp'],
-                    'exit_timestamp': trade['exit_timestamp'],
-                    'pnl': trade['pnl']
-                }
-                
-                for i, leg in enumerate(trade['legs']):
-                    for key, value in leg.items():
-                        trade_dict[f"leg_{i+1}_{key}"] = value
-                
-                all_trade_dicts.append(trade_dict)
+    for result in results:
+        if result is not None:
+            day_trades, uncounted_trades = result
+            if day_trades is not None:
+                for trade in day_trades:
+                    trade_dict = {
+                        'entry_timestamp': trade['entry_timestamp'],
+                        'exit_timestamp': trade['exit_timestamp'],
+                        'margin_used': trade['margin_used'],
+                        'entry_premium': trade['entry_premium'],
+                        'exit_premium': trade['exit_premium'],
+                        'strategy_type': trade['strategy_type'], 
+                        'exit_reason': trade['exit_reason'],
+                        'pnl': trade['pnl'],
+                        'transaction_cost': trade['transaction_cost'],
+                        'uncounted_trades': uncounted_trades
+                    }
+                    
+                    for i, leg in enumerate(trade['legs']):
+                        for key, value in leg.items():
+                            trade_dict[f"leg_{i+1}_{key}"] = value
+                    
+                    all_trade_dicts.append(trade_dict)
 
     df_combined = pd.DataFrame(all_trade_dicts)
 
-    df_combined['total_margin'] = df_combined.filter(like='margin_used').sum(axis=1)
-    df_combined['percentage_return'] = df_combined['pnl'] / abs(df_combined['total_margin'])
+    df_combined['net_pnl'] = df_combined['pnl'] - df_combined['transaction_cost']
+    df_combined['percentage_return'] = df_combined['net_pnl'] / abs(df_combined['margin_used'])
     df_combined['percentage_return'] = df_combined['percentage_return'] * 100
     df_combined['cumulative_pnl'] = df_combined['percentage_return'].cumsum()
     df_combined['max_drawdown'] = df_combined['cumulative_pnl'].cummax() - df_combined['cumulative_pnl']
@@ -37,7 +46,7 @@ def visualizeAndSave(df):
     
     fig, ax = plt.subplots(figsize=(20, 10))
     
-    df['pnl'].cumsum().plot(label='Cumulative P&L', ax=ax, color='blue')
+    df['net_pnl'].cumsum().plot(label='Cumulative P&L', ax=ax, color='blue')
     df['max_drawdown'].plot(label='Max Drawdown', ax=ax, linestyle='dashed', color='red')
     min_drawdown = df['max_drawdown'].min()
     ax.axhline(y=min_drawdown, color='green', linestyle='-', label=f'Min Drawdown: {min_drawdown:.2f}')

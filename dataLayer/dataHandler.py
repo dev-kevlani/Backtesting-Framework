@@ -8,6 +8,7 @@ from strategyLayer.createLegs import *
 from strategyLayer.positionClass import *
 from strategyLayer.strategyClass import *
 from executionLayer.spreadStrategiesBacktester import *
+from signalLayer.signalsOnFutures import *
 import time
 
 class DataHandler:
@@ -32,7 +33,7 @@ class DataHandler:
         return self.process_data(date, futures_data, options_data, self.timeframe)
 
     def fetch_and_process_data(self, args):
-        date, sl, tp, instruments_with_actions, sl_percentage_based, tp_percentage_based = args
+        date, sl, tp, instruments_with_actions, sl_percentage_based, tp_percentage_based, strategy_type = args
         date, ohlc_data, indicator_data, options_data_processed = self.fetch_data(date)
         
         if options_data_processed is not None:
@@ -40,18 +41,19 @@ class DataHandler:
                 return None
             
             options_data_processed.index = pd.to_datetime(options_data_processed.index)
-            options_data_processed['entry_signal'] = options_data_processed.index.map(lambda x: x.second == 0)
-            options_data_processed['exit_signal'] = False
-            signals = pd.DataFrame()
             
-            # strategy = atmStraddleSell()
-            # backtester = SpreadBacktester(options_data_processed, signals, sl, tp, strategy)
-            backtester = SpreadBacktester(options_data_processed, signals, sl, tp, instruments_with_actions, sl_percentage_based, tp_percentage_based)
+            signal_generator = signals(indicator_data, options_data_processed, 50, 25)
+            signal_df = signal_generator.four_tags('cycles_indicator', 'cycles_indicator', 'cycles_indicator', 'cycles_indicator')
+            signal_df = signal_generator.clean_signals(signal_df)
+            
+            backtester = SpreadBacktester(options_data_processed, signal_df, sl, tp, instruments_with_actions, sl_percentage_based, tp_percentage_based, strategy_type)
             start_time = time.time()
-            trades = backtester.execute_trades()
+            starting_timestamp = backtester.classifying_signals()
+            trades, uncounted_trades = backtester.execute_trades(starting_timestamp)
             end_time = time.time()
+            
             elapsed_time = end_time - start_time
             print(f"Processed {date} in {elapsed_time:.2f} seconds")
-            return trades
+            return trades, uncounted_trades
         else:
             return None

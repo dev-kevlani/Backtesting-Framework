@@ -1,12 +1,19 @@
 import pandas as pd
 
 class signals:
-    def __init__(self, indicators, options_data, lower_limit, upper_limit, window):
-        self.trading_signal = pd.DataFrame()
+    def __init__(self, indicators, options_data, lower_limit, upper_limit):
+        self.trading_signal = pd.DataFrame(columns=['long_signal_entry', 'short_signal_entry', 'entry_signal', 'long_signal_exit', 'short_signal_exit', 'exit_signal'])
         self.indicators = indicators
         self.options_data = options_data
         self.lower_limit = lower_limit
         self.upper_limit = upper_limit
+    
+    def clean_signals(self, signals):
+        for col in signals.filter(like='signal').columns:
+            if signals[col].isnull().any():
+                signals[col] = False
+        return signals
+                
     
     def simple_moving_average(self, ohlc_data, window=20):
         """
@@ -58,7 +65,6 @@ class signals:
         self.trading_signal[tag2] = self.indicators[tag2]
         self.trading_signal[tag3] = self.indicators[tag3]
         self.trading_signal[tag4] = self.indicators[tag4]
-        self.trading_signal.dropna(inplace=True)
         
         self.trading_signal['long_signal_entry'] = self.trading_signal.apply(
         lambda x: x[tag1] < self.lower_limit and
@@ -78,3 +84,5 @@ class signals:
         self.trading_signal['short_signal_exit'] = False
         
         return self.trading_signal
+    
+    

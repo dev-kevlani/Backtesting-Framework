@@ -3,14 +3,15 @@ from datetime import datetime, timedelta, time
 from utils.utils import *
 
 class Position:
-    def __init__(self, entry_timestamp, legs, stop_loss, target_profit, premium, margin_used, strategy_type):
+    def __init__(self, entry_timestamp, legs, stop_loss, target_profit, entry_premium, margin_used, strategy_type):
         self.entry_timestamp = entry_timestamp
         self.legs = legs
-        self.premium = premium
+        self.entry_premium = entry_premium
         self.margin_used = margin_used
         self.strategy_type = strategy_type
         self.stop_loss = stop_loss
         self.target_profit = target_profit
+        self.exit_premium = None
         self.exit_timestamp = None
         self.pnl = None
 
@@ -22,12 +23,13 @@ class Position:
         current_prices = []
         max_exit_timestamp = timestamp
         close_position = False
+        timestamp_list = []
 
         for leg in self.legs:
             multiplier = get_multiplier(leg['action'], leg['option_type'])
             current_price = None
             retries = 0
-            max_retries = 60
+            max_retries = 10
 
             while current_price is None and retries < max_retries:
                 if timestamp not in options_data.index:
@@ -46,6 +48,7 @@ class Position:
                         leg['exit_delta'] = current_leg['delta'].iloc[0] * multiplier
                         leg['exit_theta'] = current_leg['theta'].iloc[0] * multiplier
                         leg['exit_gamma'] = current_leg['gamma'].iloc[0] * multiplier
+                        timestamp_list.append(timestamp)
                         if timestamp > max_exit_timestamp:
                             max_exit_timestamp = timestamp
                         leg['exit_time_of_leg'] = max_exit_timestamp
