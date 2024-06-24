@@ -25,5 +25,6 @@ class DynamicLegStrategy:
         options_data['Timestamp'] = options_data.index
         filtered_options_data = options_data.merge(strikes_and_types_df, on=['strike_price', 'option_type'])
         filtered_options_data.set_index('Timestamp', inplace=True)
+        filtered_options_data = filtered_options_data.loc[timestamp:]
         
         return legs, filtered_options_data

@@ -34,6 +34,6 @@ def apply_indicators(data):
             ulcer_index_window, atr_window, chaikin_volatility_period, \
             atr_kc_multiplier, dpo_period, roc_period)
     
-    data = all_indicators(args)
+    ohlc_with_indicators, ohlc_with_indicators_rsi, ohlc_with_indicators_stoch = all_indicators(args)
     
-    return data
+    return ohlc_with_indicators, ohlc_with_indicators_rsi, ohlc_with_indicators_stoch

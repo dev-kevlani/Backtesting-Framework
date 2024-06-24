@@ -34,20 +34,29 @@ class SpreadBacktester:
         return self.signals.index[0]
 
     def execute_trades(self, timestamp):
-        for idx, (index, row) in enumerate(self.signals[['new_entry_signal', 'new_exit_signal']][timestamp:].iterrows()):
-            if row['new_entry_signal'] == 'long' or row['new_entry_signal'] == 'short' :
-                bool_var = self.enter_spread(timestamp)
-                if bool_var == False:
-                    timestamp = timestamp + timedelta(seconds=1)
-                    continue
-                timestamp = self.manage_positions(timestamp + timedelta(seconds=1))
-                self.execute_trades(timestamp)
+        while True:
+            signals_subset = self.signals[['new_entry_signal', 'new_exit_signal']][timestamp:]
+            if signals_subset.empty:
+                break
+            
+            for idx, (index, row) in enumerate(signals_subset.iterrows()):
+                if index.time() >= time(15, 15):
+                    return self.trades, self.positions_not_counted
                 
-            elif timestamp.time() < time(15,15):
-                continue
+                if row['new_entry_signal'] == 'long' or row['new_entry_signal'] == 'short':
+                    bool_var, upd_timestamp = self.enter_spread(index)
+                    
+                    if not bool_var:
+                        timestamp = upd_timestamp + timedelta(seconds=1)
+                        break
+                    
+                    timestamp = self.manage_positions(upd_timestamp + timedelta(seconds=1))
+                    break
             else:
                 break
+        
         return self.trades, self.positions_not_counted
+
 
     def enter_spread(self, timestamp):
         try:
@@ -56,7 +65,7 @@ class SpreadBacktester:
                 if entry_signal in self.instruments_with_actions['directional']:
                     instruments = self.instruments_with_actions['directional'][entry_signal]
                 else:
-                    return False
+                    return False, timestamp
             else:
                 instruments = self.instruments_with_actions[self.strategy_type]
             
@@ -91,10 +100,10 @@ class SpreadBacktester:
             )
             
             self.positions.append(position)
-            return True
+            return True, timestamp
         
         except KeyError as e:
-            return False
+            return False, timestamp
 
     def manage_positions(self, timestamp):
         if self.positions:
@@ -107,14 +116,14 @@ class SpreadBacktester:
     def check_exit_conditions(self, position, timestamp):
         max_exit_timestamp = timestamp
         while max_exit_timestamp.time() <= time(15, 15):
-            current_prices, max_exit_timestamp, close_position = position.get_current_leg_prices(self.filtered_options_data, max_exit_timestamp)
-            exit_premium = sum((leg['exit_price'] * leg['lot_size']) for leg in position.legs)
-            position.exit_premium = exit_premium
+            max_exit_timestamp, close_position = position.get_current_leg_prices(self.filtered_options_data, max_exit_timestamp)
             if close_position:
                 self.positions_not_counted+=1
                 self.positions.remove(position)
                 return max_exit_timestamp
-
+            exit_premium = sum((leg['exit_price'] * leg['lot_size']) for leg in position.legs)
+            position.exit_premium = exit_premium
+            
             if position.strategy_type == 'credit':
                 
                 if (abs(position.exit_premium) >= position.stop_loss):

@@ -60,29 +60,33 @@ class signals:
         return signals[['entry_signal', 'exit_signal']]
 
     def four_tags(self, tag1, tag2, tag3, tag4):
+        try:
+            self.trading_signal[tag1] = self.indicators[tag1]
+            self.trading_signal[tag2] = self.indicators[tag2]
+            self.trading_signal[tag3] = self.indicators[tag3]
+            self.trading_signal[tag4] = self.indicators[tag4]
+            
+            self.trading_signal['long_signal_entry'] = self.trading_signal.apply(
+            lambda x: x[tag1] < self.lower_limit and
+                    x[tag2] < self.lower_limit and
+                    x[tag3] < self.lower_limit and
+                    x[tag4] < self.lower_limit,
+            axis=1
+        )
+            self.trading_signal['short_signal_entry'] = self.trading_signal.apply(
+            lambda x: x[tag1] > self.upper_limit and
+                    x[tag2] > self.upper_limit and
+                    x[tag3] > self.upper_limit and
+                    x[tag4] > self.upper_limit,
+            axis=1
+        )
+            self.trading_signal['long_signal_exit'] = False
+            self.trading_signal['short_signal_exit'] = False
+            
+            return self.trading_signal
         
-        self.trading_signal[tag1] = self.indicators[tag1]
-        self.trading_signal[tag2] = self.indicators[tag2]
-        self.trading_signal[tag3] = self.indicators[tag3]
-        self.trading_signal[tag4] = self.indicators[tag4]
-        
-        self.trading_signal['long_signal_entry'] = self.trading_signal.apply(
-        lambda x: x[tag1] < self.lower_limit and
-                  x[tag2] < self.lower_limit and
-                  x[tag3] < self.lower_limit and
-                  x[tag4] < self.lower_limit,
-        axis=1
-    )
-        self.trading_signal['short_signal_entry'] = self.trading_signal.apply(
-        lambda x: x[tag1] > self.upper_limit and
-                  x[tag2] > self.upper_limit and
-                  x[tag3] > self.upper_limit and
-                  x[tag4] > self.upper_limit,
-        axis=1
-    )
-        self.trading_signal['long_signal_exit'] = False
-        self.trading_signal['short_signal_exit'] = False
-        
-        return self.trading_signal
+        except Exception as e:
+            print("tag not found in the indicator list", e)
+            return None
     
     

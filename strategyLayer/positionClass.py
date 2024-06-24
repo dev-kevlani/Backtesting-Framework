@@ -20,7 +20,6 @@ class Position:
         self.pnl = pnl
 
     def get_current_leg_prices(self, options_data, timestamp):
-        current_prices = []
         max_exit_timestamp = timestamp
         close_position = False
         timestamp_list = []
@@ -38,16 +37,27 @@ class Position:
                     continue
                 try:
                     option = options_data.loc[timestamp]
-                    current_leg = option[(option['strike_price'] == leg['strike_price']) & (option['option_type'] == leg['option_type'])]
-                    if current_leg.empty:
+                    if isinstance(option, pd.Series):
+                        current_leg = option if (option['strike_price'] == leg['strike_price'] and option['option_type'] == leg['option_type']) else None
+                    else:
+                        current_leg = option[(option['strike_price'] == leg['strike_price']) & (option['option_type'] == leg['option_type'])]
+
+                    if current_leg is None or current_leg.empty:
                         timestamp += pd.Timedelta(seconds=1)
                         retries += 1
                     else:
-                        current_price = current_leg['option_price'].iloc[0] if leg['action'] == 'buy' else -current_leg['option_price'].iloc[0]
+                        if isinstance(current_leg, pd.Series):
+                            current_price = current_leg['option_price'] if leg['action'] == 'buy' else -current_leg['option_price']
+                            leg['exit_delta'] = current_leg['delta'] * multiplier
+                            leg['exit_theta'] = current_leg['theta'] * multiplier
+                            leg['exit_gamma'] = current_leg['gamma'] * multiplier
+                        else:
+                            current_price = current_leg['option_price'].iloc[0] if leg['action'] == 'buy' else -current_leg['option_price'].iloc[0]
+                            leg['exit_delta'] = current_leg['delta'].iloc[0] * multiplier
+                            leg['exit_theta'] = current_leg['theta'].iloc[0] * multiplier
+                            leg['exit_gamma'] = current_leg['gamma'].iloc[0] * multiplier
+
                         leg['exit_price'] = current_price
-                        leg['exit_delta'] = current_leg['delta'].iloc[0] * multiplier
-                        leg['exit_theta'] = current_leg['theta'].iloc[0] * multiplier
-                        leg['exit_gamma'] = current_leg['gamma'].iloc[0] * multiplier
                         timestamp_list.append(timestamp)
                         if timestamp > max_exit_timestamp:
                             max_exit_timestamp = timestamp
@@ -60,6 +70,4 @@ class Position:
                 close_position = True
                 break
 
-            current_prices.append(current_price)
-
-        return current_prices, max_exit_timestamp, close_position
+        return max_exit_timestamp, close_position

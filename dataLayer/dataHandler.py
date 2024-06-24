@@ -22,10 +22,10 @@ class DataHandler:
             return date, None, None, options_data_processed
 
         ohlc_data = create_ohlc_candles(futures_data, timeframe)
-        indicator_data = apply_indicators(ohlc_data.copy())
+        indicator_data, indicator_rsi, indicator_stoch = apply_indicators(ohlc_data.copy())
         options_data_processed = calculate_iv_and_greeks(options_data)
         
-        return date, ohlc_data, indicator_data, options_data_processed
+        return date, ohlc_data, indicator_rsi, options_data_processed
 
     def fetch_data(self, date):
         futures_data = get_futures_data(self.ticker, date.year, date.month, date.day)
@@ -42,8 +42,10 @@ class DataHandler:
             
             options_data_processed.index = pd.to_datetime(options_data_processed.index)
             
-            signal_generator = signals(indicator_data, options_data_processed, 50, 25)
-            signal_df = signal_generator.four_tags('cycles_indicator', 'cycles_indicator', 'cycles_indicator', 'cycles_indicator')
+            signal_generator = signals(indicator_data, options_data_processed, 46, 90)
+            signal_df = signal_generator.four_tags('ulcer_index_rsi', 'kc_low_rsi', 'kc_low_rsi', 'kc_low_rsi')
+            if signal_df is None:
+                return None
             signal_df = signal_generator.clean_signals(signal_df)
             
             backtester = SpreadBacktester(options_data_processed, signal_df, sl, tp, instruments_with_actions, sl_percentage_based, tp_percentage_based, strategy_type)

@@ -39,14 +39,17 @@ def process_results(results):
     df_combined['entry_timestamp'] = pd.to_datetime(df_combined['entry_timestamp'])
     df_combined.set_index('entry_timestamp', inplace=True)
     df_combined.rename_axis('Timestamp', inplace=True)
-
-    return df_combined
+    
+    count_positive = (df_combined['net_pnl'] > 0).sum()
+    accuracy = count_positive / df_combined.shape[0]
+    
+    return df_combined, df_combined.shape[0], count_positive, accuracy
 
 def visualizeAndSave(df):
     
     fig, ax = plt.subplots(figsize=(20, 10))
     
-    df['net_pnl'].cumsum().plot(label='Cumulative P&L', ax=ax, color='blue')
+    df['cumulative_pnl'].plot(label='Cumulative P&L', ax=ax, color='blue')
     df['max_drawdown'].plot(label='Max Drawdown', ax=ax, linestyle='dashed', color='red')
     min_drawdown = df['max_drawdown'].min()
     ax.axhline(y=min_drawdown, color='green', linestyle='-', label=f'Min Drawdown: {min_drawdown:.2f}')
