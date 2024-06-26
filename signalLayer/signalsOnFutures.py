@@ -1,6 +1,11 @@
 import pandas as pd
 
 class signals:
+   
+    """
+    example use case of signal class
+    """
+    
     def __init__(self, indicators, options_data, lower_limit, upper_limit):
         self.trading_signal = pd.DataFrame(columns=['long_signal_entry', 'short_signal_entry', 'entry_signal', 'long_signal_exit', 'short_signal_exit', 'exit_signal'])
         self.indicators = indicators
