@@ -80,7 +80,7 @@ class DataHandler:
             
             options_data_processed.index = pd.to_datetime(options_data_processed.index)
             
-            signal_generator = signals(indicator_data, options_data_processed, 15, 95)
+            signal_generator = Signals(indicator_data, options_data_processed, 15, 95)
             signal_df = signal_generator.four_tags('ulcer_index_rsi', 'kc_low_rsi', 'kc_low_rsi', 'kc_low_rsi')
             
             if signal_df is None:

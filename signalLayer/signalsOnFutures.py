@@ -1,6 +1,6 @@
 import pandas as pd
 
-class signals:
+class Signals:
     def __init__(self, indicators, options_data, lower_limit, upper_limit):
         """
         Initialize Signals object with indicators, options data, and signal thresholds.
