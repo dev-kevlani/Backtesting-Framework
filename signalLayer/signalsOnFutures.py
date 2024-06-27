@@ -1,6 +1,6 @@
 import pandas as pd
 
-class Signals:
+class signals:
     def __init__(self, indicators, options_data, lower_limit, upper_limit):
         """
         Initialize Signals object with indicators, options data, and signal thresholds.
@@ -117,9 +117,5 @@ class Signals:
         except KeyError as e:
             print(f"Indicator tag not found: {e}")
             return None
-
-# Example usage:
-# Define indicators, options_data, lower_limit, and upper_limit
-# signals_obj = Signals(indicators, options_data, lower_limit, upper_limit)
-# signals_df = signals_obj.four_tags('tag1', 'tag2', 'tag3', 'tag4')
-# Clean signals if needed: signals_cleaned = signals_obj.clean_signals(signals_df)
+    
+    
