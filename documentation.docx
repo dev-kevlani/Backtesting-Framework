@@ -1,0 +1,60 @@
+Introduction
+The Backtesting Framework is designed to evaluate options trading strategies by simulating trades on historical data. It tracks the performance of these strategies through key metrics such as profit and loss (PnL) and portfolio greeks (delta, theta, gamma).
+
+Dependencies
+The project relies on:
+
+pandas for data manipulation and analysis.
+datetime for handling date and time operations.
+Custom utility functions from utils.utils.
+
+Class Definitions
+Position Class
+Purpose: Represents a single trading position, which can consist of multiple legs (individual options contracts).
+
+Key Attributes:
+entry_timestamp: The time when the position was entered.
+legs: A list of dictionaries, each representing a leg of the position.
+entry_premium: The total premium paid/received upon entering the position.
+margin_used: The margin requirement for the position.
+strategy_type: Indicates if the strategy is a credit or debit strategy.
+stop_loss and target_profit: Define the risk management parameters.
+exit_premium and exit_timestamp: Captures the state at the time of exiting the position.
+pnl: Tracks the profit or loss of the position.
+
+Key Methods:
+Initialization: Sets up a new position with its attributes.
+Adding Exit Details: Records exit details like timestamp and PnL.
+Retrieving Current Prices: Fetches the latest prices and greeks for each leg from the options data.
+SpreadBacktester Class
+Purpose: Manages the backtesting process by handling trade execution, position management, and performance tracking.
+
+Key Attributes:
+options_data: Historical options data used for backtesting.
+signals: Trading signals indicating entry and exit points.
+stop_loss, target_profit: Define risk management parameters for the strategy.
+instruments_with_actions: Maps instruments to their respective actions.
+strategy_type: Specifies if the strategy is directional or non-directional.
+positions: List of currently open positions.
+trades: List of completed trades.
+positions_not_counted: Counter for untracked positions.
+portfolio_metrics: Dictionary to track portfolio greeks (delta, theta, gamma).
+
+Key Methods:
+Initialization: Sets up the backtester with required data and parameters.
+Classifying Signals: Classifies signals as entry or exit based on the strategy type.
+Executing Trades: Iterates through signals to execute trades and manage open positions.
+Entering Spreads: Creates new positions based on entry signals and current options data.
+Managing Positions: Continuously checks open positions against exit conditions and updates them.
+Checking Exit Conditions: Evaluates if a position meets stop loss or target profit criteria.
+Tracking Portfolio Greeks: Aggregates the greeks of all open positions to update portfolio metrics.
+Closing Positions: Finalizes a position, records its details, and updates the trades list.
+Helper Functions
+Purpose: Provide utility functions for common tasks, such as calculating multipliers for different option actions and generating strategy legs.
+
+Examples of utility functions:
+
+get_multiplier: Returns the multiplier based on action (buy/sell) and option type (call/put).
+DynamicLegStrategy: A class to generate legs for a given options strategy.
+Conclusion
+This documentation provides an overview of the Backtesting Framework, outlining the purpose and functionality of each part of the codebase. By understanding the interaction between the Position and SpreadBacktester classes and their methods, users can effectively use and extend the framework to backtest various trading strategies.
