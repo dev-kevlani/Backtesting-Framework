@@ -37,7 +37,14 @@ class SpreadBacktester:
         self.positions = []
         self.trades = []
         self.positions_not_counted = 0
-        self.portfolio_metrics = {'delta': 0, 'theta': 0, 'gamma': 0, 'iv': 0}
+        self.portfolio_metrics = {
+                                'current_timestamp': None,
+                                'net_port_pnl': 0,
+                                'port_delta': 0,
+                                'port_theta': 0,
+                                'port_gamma': 0,
+                                'port_iv': 0
+                            }
 
     def classifying_signals(self):
         """
@@ -248,3 +255,25 @@ class SpreadBacktester:
         self.positions.remove(position)
 
 
+    def update_portfolio_metrics(self, timestamp, position):
+        """
+        Manage portfolio Greeks and implement hedging strategies or position adjustments.
+
+        Parameters:
+        - timestamp (Timestamp): Current timestamp for managing portfolio.
+        """
+        transaction_cost = 0
+        pnl = position.exit_premium - position.entry_premium
+        
+
+        for leg in position.legs:
+            self.portfolio_metrics['port_delta'] += leg['delta'] * leg['lot_size']
+            self.portfolio_metrics['port_gamma'] += leg['gamma'] * leg['lot_size']
+            self.portfolio_metrics['port_theta'] += leg['theta'] * leg['lot_size']
+            self.portfolio_metrics['port_iv'] += leg['iv'] * leg['lot_size']
+            transaction_cost += (abs(leg['entry_price'] + leg['exit_price']) * leg['lot_size']) * 0.001
+        
+        self.portfolio_metrics['current_timestamp'] = timestamp
+        self.portfolio_metrics['net_port_pnl'] += (pnl-transaction_cost)
+
+        
